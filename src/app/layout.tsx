@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import Script from "next/script";
 import "./globals.css";
+import ClientFont from "@/components/client-font";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -19,9 +20,11 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       {/* <Script src="https://api.tempo.build/proxy-asset?url=https://storage.googleapis.com/tempo-public-assets/error-handling.js" /> [deprecated] */}
-      <body className={inter.className}>
-        {children}
-        <TempoInit />
+      <body suppressHydrationWarning>
+        <ClientFont>
+          {children}
+          <TempoInit />
+        </ClientFont>
       </body>
     </html>
   );

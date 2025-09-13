@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, Dispatch, SetStateAction } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Card,
@@ -28,12 +28,36 @@ import { CalendarIcon, Download, Filter, RefreshCw } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 
-interface MetricsPanelProps {
-  className?: string;
+interface MetricView {
+  // union of allowed metric view keys
+  // using same keys as Dashboard
+  // 'rate-limits' (plural) to match Dashboard
+  // represented as a string literal union
 }
 
-const MetricsPanel = ({ className = "" }: MetricsPanelProps) => {
-  const [activeTab, setActiveTab] = useState("request-volume");
+interface MetricsPanelProps {
+  className?: string;
+  activeView: "request-volume" | "rate-limits" | "error-logs";
+  onViewChange: Dispatch<SetStateAction<"request-volume" | "rate-limits" | "error-logs">>;
+}
+
+const MetricsPanel = ({ className = "", activeView, onViewChange }: MetricsPanelProps) => {
+  const [activeTab, setActiveTab] = useState<string>(activeView ?? "request-volume");
+
+  useEffect(() => {
+    if (activeView && activeView !== activeTab) {
+      setActiveTab(activeView);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeView]);
+
+  // update both internal state and notify parent when tab changes
+  const handleTabChange = (value: string) => {
+    setActiveTab(value);
+    // cast is safe because the component only uses the three known values
+    onViewChange(value as "request-volume" | "rate-limits" | "error-logs");
+  };
+
   const [date, setDate] = useState<Date | undefined>(new Date());
   const [timeRange, setTimeRange] = useState("24h");
   const [service, setService] = useState("all");
@@ -101,13 +125,13 @@ const MetricsPanel = ({ className = "" }: MetricsPanelProps) => {
       <Tabs
         defaultValue="request-volume"
         value={activeTab}
-        onValueChange={setActiveTab}
+        onValueChange={handleTabChange}
         className="w-full"
       >
         <div className="flex justify-between items-center mb-4">
           <TabsList>
             <TabsTrigger value="request-volume">Request Volume</TabsTrigger>
-            <TabsTrigger value="rate-limit">Rate Limit Status</TabsTrigger>
+            <TabsTrigger value="rate-limits">Rate Limit Status</TabsTrigger>
             <TabsTrigger value="error-logs">Error Logs</TabsTrigger>
           </TabsList>
 
@@ -217,7 +241,7 @@ const MetricsPanel = ({ className = "" }: MetricsPanelProps) => {
           </Card>
         </TabsContent>
 
-        <TabsContent value="rate-limit" className="mt-0">
+        <TabsContent value="rate-limits" className="mt-0">
           <Card>
             <CardHeader>
               <div className="flex justify-between items-center">
@@ -252,13 +276,12 @@ const MetricsPanel = ({ className = "" }: MetricsPanelProps) => {
                     </div>
                     <div className="h-2 w-full bg-secondary rounded-full overflow-hidden">
                       <div
-                        className={`h-full ${
-                          item.status === "critical"
+                        className={`h-full ${item.status === "critical"
                             ? "bg-destructive"
                             : item.status === "warning"
                               ? "bg-yellow-500"
                               : "bg-green-500"
-                        }`}
+                          }`}
                         style={{ width: `${(item.used / item.limit) * 100}%` }}
                       />
                     </div>
